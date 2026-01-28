@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لعبة XO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background: #4facfe;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background: #00c6fb;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .cell {
+      background: #f0f0f0;
+      height: 90px;
+      font-size: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    .cell:hover {
+      background: #dfefff;
+    }
+
+    .status {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    footer {
+      margin-top: 15px;
+      font-size: 12px;
+      color: #555;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="startScreen">
+  <h1>لعبة XO</h1>
+
+  <select id="mode">
+    <option value="1">لاعب واحد</option>
+    <option value="2">لاعبان</option>
+  </select>
+
+  <input type="text" id="player1" placeholder="اسم اللاعب الأول">
+  <input type="text" id="player2" placeholder="اسم اللاعب الثاني (اختياري)">
+
+  <button onclick="startGame()">ابدأ اللعبة</button>
+
+  <footer>
+    <div>Student Name: SALEH GAZI JAMEEL ALQURASHI (صالح غازي جميل القرشي)</div>
+    <div>Student ID: 446001187</div>
+    <div>Supervised by: Mohammed Ahmed Jabali</div>
+  </footer>
+</div>
+
+<div class="container" id="gameScreen" style="display:none;">
+  <h1>لعبة XO</h1>
+
+  <div class="status" id="status"></div>
+
+  <div class="board" id="board"></div>
+
+  <button onclick="resetGame()">إعادة اللعب</button>
+
+  <footer>
+    <div>Student Name: SALEH GAZI JAMEEL ALQURASHI (صالح غازي جميل القرشي)</div>
+    <div>Student ID: 446001187</div>
+    <div>Supervised by: Mohammed Ahmed Jabali</div>
+  </footer>
+</div>
+
+<script>
+  let board = ["", "", "", "", "", "", "", "", ""];
+  let currentPlayer = "X";
+  let players = {};
+  let mode = 1;
+  let gameActive = true;
+
+  const winConditions = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  function startGame() {
+    mode = document.getElementById("mode").value;
+    const p1 = document.getElementById("player1").value || "اللاعب 1";
+    const p2 = document.getElementById("player2").value || "الكمبيوتر";
+
+    players = { X: p1, O: mode == 2 ? p2 : "الكمبيوتر" };
+
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+
+    createBoard();
+    updateStatus();
+  }
+
+  function createBoard() {
+    const boardDiv = document.getElementById("board");
+    boardDiv.innerHTML = "";
+    board = ["", "", "", "", "", "", "", "", ""];
+    gameActive = true;
+    currentPlayer = "X";
+
+    board.forEach((cell, index) => {
+      const cellDiv = document.createElement("div");
+      cellDiv.classList.add("cell");
+      cellDiv.addEventListener("click", () => cellClick(index));
+      boardDiv.appendChild(cellDiv);
+    });
+  }
+
+  function cellClick(index) {
+    if (!gameActive || board[index] !== "") return;
+
+    board[index] = currentPlayer;
+    document.getElementsByClassName("cell")[index].innerText = currentPlayer;
+
+    if (checkWin()) {
+      document.getElementById("status").innerText =
+        "🎉 الفائز: " + players[currentPlayer];
+      gameActive = false;
+      return;
+    }
+
+    if (!board.includes("")) {
+      document.getElementById("status").innerText = "تعادل 🤝";
+      gameActive = false;
+      return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    updateStatus();
+
+    if (mode == 1 && currentPlayer === "O") {
+      setTimeout(computerMove, 500);
+    }
+  }
+
+  function computerMove() {
+    let emptyCells = board
+      .map((v, i) => v === "" ? i : null)
+      .filter(v => v !== null);
+
+    const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    cellClick(randomIndex);
+  }
+
+  function checkWin() {
+    return winConditions.some(condition =>
+      condition.every(index => board[index] === currentPlayer)
+    );
+  }
+
+  function updateStatus() {
+    document.getElementById("status").innerText =
+      "الدور على: " + players[currentPlayer];
+  }
+
+  function resetGame() {
+    createBoard();
+    updateStatus();
+  }
+</script>
+
+</body>
+</html>
